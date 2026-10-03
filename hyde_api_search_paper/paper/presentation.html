@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Modern Retrieval-Augmented Discovery of RESTful Web APIs — Aman Kumar</title>
+<style>
+  /* CLASSIC POWERPOINT-STYLE ACADEMIC DECK */
+  :root {
+    --navy: #1f3864;
+    --navy-light: #2e5597;
+    --accent: #c00000;
+    --accent-2: #ed7d31;
+    --bg: #ffffff;
+    --bg-soft: #f2f2f2;
+    --text: #222;
+    --text-muted: #595959;
+    --border: #bfbfbf;
+    --border-light: #d9d9d9;
+    --highlight-yellow: #fff2cc;
+    --highlight-green: #e2efda;
+    --highlight-red: #fbe5d6;
+    --good: #2e7d32;
+    --bad: #c62828;
+    --warn: #b8860b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #595959;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* SLIDE FRAME — slide sits in the area ABOVE the nav bar (5.5rem reserved) */
+  .slide-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1vh 1vw 5.5rem;   /* generous bottom to clear the fixed nav controller */
+  }
+
+  .slide {
+    display: none;
+    width: 100%;
+    max-width: 1280px;
+    aspect-ratio: 4 / 3;
+    max-height: 100%;          /* fills the (already shortened) container height */
+    background: var(--bg);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    flex-direction: column;
+  }
+  .slide.active { display: flex; }
+
+  /* HEADER BAR */
+  .slide-header {
+    background: var(--navy);
+    color: white;
+    padding: 0.85rem 1.8rem 0.7rem;
+    border-bottom: 3px solid var(--accent-2);
+    flex-shrink: 0;
+  }
+  .slide-header h1 {
+    font-size: clamp(1.1rem, 1.85vw, 1.6rem);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .slide-header .subtitle {
+    font-size: clamp(0.7rem, 0.85vw, 0.85rem);
+    color: #d9e2f3;
+    margin-top: 0.2rem;
+    font-weight: 400;
+  }
+
+  /* CONTENT AREA — items spread vertically to fill the page (no empty regions) */
+  .slide-body {
+    flex: 1;
+    padding: 1.1rem 1.9rem 1.3rem;
+    overflow: hidden;
+    font-size: clamp(0.92rem, 1.12vw, 1.12rem);
+    line-height: 1.55;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;     /* equal gaps top, between, bottom */
+  }
+  /* Arch-strip stays compact in size but participates in the flow */
+  .slide-body > .arch-strip { flex-shrink: 0; }
+
+  /* OUTLINE-STYLE SLIDES — col2 with lists as the ONLY content:
+     stretch the col2 and let inner OL/UL distribute items vertically with
+     space-around, so the page is filled instead of clustered in the middle. */
+  .slide-body > .col2:only-child,
+  .slide-body > .col3:only-child,
+  .slide-body > .col4:only-child {
+    flex: 1 1 auto;
+    align-items: stretch;
+    align-self: stretch;
+  }
+  .slide-body > .col2:only-child > div,
+  .slide-body > .col3:only-child > div,
+  .slide-body > .col4:only-child > div {
+    display: flex;
+    flex-direction: column;
+  }
+  .slide-body > .col2:only-child ol,
+  .slide-body > .col2:only-child ul,
+  .slide-body > .col3:only-child ol,
+  .slide-body > .col3:only-child ul {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin: 0 0 0 2rem;
+  }
+  .slide-body > .col2:only-child li,
+  .slide-body > .col3:only-child li {
+    font-size: clamp(1.05rem, 1.32vw, 1.35rem);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* If the only content is a reflist, stretch it to fill the body
+     and force its grid rows to share remaining height equally. */
+  .slide-body > .reflist:only-child {
+    flex: 1 1 auto;
+    align-self: stretch;
+    grid-auto-rows: 1fr;          /* every row gets equal share of height */
+    gap: 0.4rem 0.9rem;
+    font-size: clamp(0.88rem, 1.05vw, 1.1rem);   /* bigger */
+  }
+  .slide-body > .reflist:only-child .refitem {
+    display: flex;
+    align-items: center;          /* center text vertically inside its cell */
+    line-height: 1.4;
+    padding: 0.3rem 0.6rem;
+  }
+  /* If only content is a barchart, stretch */
+  .slide-body > .barchart:only-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+
+  /* FOOTER */
+  .slide-footer {
+    background: var(--bg-soft);
+    border-top: 1px solid var(--border);
+    padding: 0.35rem 1.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .slide-footer .institution { font-weight: 600; color: var(--navy); }
+
+  /* TYPOGRAPHY */
+  h2 {
+    font-size: clamp(0.92rem, 1.2vw, 1.12rem);
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.18rem;
+    border-bottom: 2px solid var(--accent-2);
+    display: inline-block;
+  }
+  h3 {
+    font-size: clamp(0.82rem, 1vw, 0.95rem);
+    color: var(--navy);
+    font-weight: 700;
+    margin: 0.3rem 0 0.2rem;
+  }
+  p { margin-bottom: 0.35rem; }
+  strong { color: #000; font-weight: 700; }
+  em { font-style: italic; color: var(--navy-light); }
+  code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.88em;
+    background: var(--bg-soft);
+    padding: 0.06em 0.3em;
+    border-radius: 2px;
+    color: var(--accent);
+  }
+
+  /* BULLET LISTS */
+  ul, ol { margin: 0.25rem 0 0.4rem 1.3rem; }
+  ul li, ol li { margin-bottom: 0.18rem; }
+  ul.tight li { margin-bottom: 0.1rem; }
+
+  /* TWO/THREE-COLUMN */
+  .col2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem;
+  }
+  .col3 {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;
+  }
+  .col4 {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem;
+  }
+
+  /* BOX (PowerPoint-style content box) */
+  .box {
+    background: white;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--navy);
+    padding: 0.55rem 0.85rem;
+    border-radius: 2px;
+    margin-bottom: 0.4rem;
+  }
+  .box-title {
+    font-weight: 700;
+    color: var(--navy);
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  .box.accent { border-left-color: var(--accent-2); background: #fff8f0; }
+  .box.success { border-left-color: var(--good); background: var(--highlight-green); }
+  .box.warn { border-left-color: var(--warn); background: var(--highlight-yellow); }
+  .box.danger { border-left-color: var(--bad); background: var(--highlight-red); }
+
+  /* STAT BLOCK (for big numbers) */
+  .stat-box {
+    text-align: center;
+    background: white;
+    border: 1px solid var(--border);
+    padding: 0.55rem 0.4rem;
+    border-radius: 2px;
+  }
+  .stat-box .num {
+    font-size: clamp(1.1rem, 1.8vw, 1.65rem);
+    font-weight: 700;
+    color: var(--navy);
+    display: block;
+    line-height: 1.1;
+  }
+  .stat-box .lbl {
+    font-size: 0.66rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.15rem;
+    display: block;
+  }
+
+  /* TABLE - classic academic */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.74rem;
+    margin: 0.3rem 0;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.45rem;
+    text-align: left;
+    vertical-align: middle;
+  }
+  th {
+    background: var(--navy);
+    color: white;
+    font-weight: 600;
+    font-size: 0.7rem;
+  }
+  tbody tr:nth-child(even) { background: var(--bg-soft); }
+  td.center { text-align: center; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.good { color: var(--good); font-weight: 700; }
+  td.bad { color: var(--bad); font-weight: 700; }
+  .table-caption {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 0.2rem;
+    font-style: italic;
+  }
+
+  /* HORIZONTAL BAR CHART (classic) */
+  .barchart { margin: 0.35rem 0; }
+  .barrow {
+    display: grid;
+    grid-template-columns: 200px 1fr 65px;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.78rem;
+  }
+  .barrow .lbl { color: var(--text); font-weight: 500; }
+  .bartrack {
+    height: 16px;
+    background: #ebebeb;
+    border: 1px solid var(--border-light);
+    position: relative;
+  }
+  .barfill {
+    height: 100%;
+    background: var(--navy);
+    transition: width 0.6s ease;
+  }
+  .barfill.good { background: var(--good); }
+  .barfill.bad { background: var(--bad); }
+  .barfill.target { background: var(--accent); }
+  .barfill.muted { background: #8c8c8c; }
+  .barrow .val {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  /* PIPELINE BLOCKS */
+  .pipeline {
+    display: flex; align-items: center; gap: 0.3rem;
+    flex-wrap: wrap; margin: 0.4rem 0;
+    justify-content: center;
+  }
+  .pipe-node {
+    background: white;
+    border: 2px solid var(--navy);
+    padding: 0.35rem 0.55rem;
+    text-align: center;
+    min-width: 95px;
+    font-size: 0.7rem;
+  }
+  .pipe-node strong { display: block; color: var(--navy); font-size: 0.76rem; }
+  .pipe-node small { color: var(--text-muted); font-size: 0.62rem; }
+  .pipe-node.active { background: var(--navy); color: white; }
+  .pipe-node.active strong { color: white; }
+  .pipe-node.active small { color: #d9e2f3; }
+  .pipe-arrow {
+    color: var(--navy);
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+  .pipe-stack { display: flex; flex-direction: column; gap: 0.2rem; }
+
+  /* TITLE SLIDE */
+  .title-slide .slide-header { display: none; }
+  .title-slide .slide-body {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3rem 4rem;
+  }
+  .title-slide h1 {
+    font-size: clamp(1.8rem, 3.2vw, 2.7rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 0.6rem;
+    color: white;
+  }
+  .title-slide .deck-subtitle {
+    font-size: clamp(1rem, 1.3vw, 1.2rem);
+    color: #d9e2f3;
+    margin-bottom: 2rem;
+    max-width: 70ch;
+    font-weight: 400;
+  }
+  .title-slide .author-block {
+    border-top: 2px solid #d9e2f3;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+  }
+  .title-slide .author-block div span {
+    display: block;
+    font-size: 0.78rem;
+    color: #b4c5e7;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.2rem;
+  }
+  .title-slide .author-block div strong {
+    font-size: 1rem;
+    color: white;
+    font-weight: 700;
+  }
+  .title-slide .badge-line {
+    background: var(--accent-2);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 1.5rem;
+  }
+
+  /* SECTION DIVIDER SLIDE */
+  .section-slide .slide-body {
+    background: var(--navy);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    gap: 0;
+  }
+  /* Title slide must override the new default body gap as well */
+  .title-slide .slide-body { gap: 0; }
+  .section-slide .slide-header { display: none; }
+  .section-slide h1 {
+    color: white;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .section-slide .section-num {
+    color: var(--accent-2);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+  }
+
+  /* REFERENCE LIST */
+  .reflist {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.18rem 0.7rem;
+    font-size: 0.7rem;
+  }
+  .refitem {
+    padding: 0.18rem 0.4rem;
+    border-bottom: 1px dotted var(--border);
+    line-height: 1.35;
+  }
+  .refitem .yr {
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 0.4rem;
+  }
+  .refitem .au { font-weight: 600; color: #000; }
+  .refitem .ven { color: var(--text-muted); font-style: italic; }
+
+  /* QUOTE / CALLOUT */
+  .callout {
+    background: var(--highlight-yellow);
+    border-left: 4px solid var(--warn);
+    padding: 0.5rem 0.8rem;
+    margin: 0.4rem 0;
+    font-style: italic;
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+  .callout strong { font-style: normal; }
+
+  /* CHECKMARK / CROSS */
+  .check::before { content: "✓ "; color: var(--good); font-weight: 700; }
+  .cross::before { content: "✗ "; color: var(--bad); font-weight: 700; }
+
+  /* NAV CONTROLS */
+  .nav-bar {
+    position: fixed;
+    bottom: 1vh;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    z-index: 100;
+  }
+  .nav-btn {
+    background: var(--navy);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .nav-btn:hover { background: var(--navy-light); }
+  .nav-btn:disabled { background: #bfbfbf; cursor: not-allowed; }
+  .nav-counter {
+    font-size: 0.85rem;
+    color: var(--text);
+    padding: 0 0.5rem;
+    min-width: 70px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: var(--accent-2);
+    z-index: 200;
+    transition: width 0.3s ease;
+  }
+
+  /* SLIDE NUMBER — hidden inside content; counter remains in nav bar */
+  .slide-number-corner { display: none !important; }
+
+  .clickhint {
+    position: fixed;
+    top: 1vh;
+    right: 1vw;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.7);
+    z-index: 50;
+  }
+
+  /* small text helpers */
+  .small { font-size: 0.78rem; color: var(--text-muted); }
+  .center { text-align: center; }
+
+  /* fix for scrollbar */
+  .slide-body::-webkit-scrollbar { width: 6px; }
+  .slide-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ============================================================ */
+  /* ARCHITECTURE STRIP — appears at top of body on relevant slides */
+  /* ============================================================ */
+  .arch-strip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.7rem;
+    background: linear-gradient(to right, #fafbfd, #f0f2f6, #fafbfd);
+    border: 1px solid var(--border-light);
+    border-radius: 3px;
+    margin-bottom: 0.6rem;
+    flex-shrink: 0;
+  }
+  .arch-strip .arch-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    margin-right: 0.4rem;
+  }
+  .arch-node-mini {
+    background: white;
+    border: 1.5px solid var(--navy);
+    padding: 0.2rem 0.45rem;
+    text-align: center;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--navy);
+    min-width: 54px;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .arch-node-mini.dim { opacity: 0.28; }
+  .arch-node-mini.active {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+    color: white;
+    box-shadow: 0 2px 6px rgba(237,125,49,0.35);
+  }
+  .arch-arrow-mini {
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .arch-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.16rem;
+  }
+  .arch-group .arch-node-mini {
+    font-size: 0.58rem;
+    min-width: 56px;
+    padding: 0.12rem 0.4rem;
+  }
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progress" style="width:4.5%"></div>
+<div class="clickhint">← / → keys or buttons to navigate</div>
+
+<div class="slide-container">
+
+<!-- ============================================================ -->
+<!-- SLIDE 1 — TITLE -->
+<!-- ============================================================ -->
+<section class="slide active title-slide">
+  <div class="slide-header"></div>
+  <div class="slide-body">
+    <span class="badge-line">Mini-Project · BTech 6th Semester · April 2026</span>
+    <h1>Modern Retrieval-Augmented Discovery<br/>of RESTful Web APIs</h1>
+    <p class="deck-subtitle">An empirical reassessment of the necessity of LLM hierarchical reasoning, against a 2025 benchmark.</p>
+    <div class="author-block" style="grid-template-columns: 1fr 1fr;">
+      <div><span>Author 1</span><strong>Aman Kumar</strong><span style="margin-top:0.2rem; color:#b4c5e7;">CS23B1003</span></div>
+      <div><span>Author 2</span><strong>Rudra Pratap Singh</strong><span style="margin-top:0.2rem; color:#b4c5e7;">AD23B1047</span></div>
+    </div>
+    <div style="margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div><span style="font-size: 0.78rem; color: #b4c5e7; text-transform: uppercase; letter-spacing: 0.05em;">Supervisor</span><div style="font-weight:700; color:white; margin-top:0.2rem;">Dr. Neha Agarwal</div></div>
+      <div><span style="font-size: 0.78rem; color: #b4c5e7; text-transform: uppercase; letter-spacing: 0.05em;">Institution</span><div style="font-weight:700; color:white; margin-top:0.2rem;">IIIT Raichur</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 2 — OUTLINE -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>Outline of the Presentation</h1>
+    <div class="subtitle">Roadmap of the talk</div>
+  </div>
+  <div class="slide-body">
+    <div class="col2">
+      <div>
+        <ol>
+          <li>Introduction — the Web API explosion</li>
+          <li>The API service discovery problem</li>
+          <li>Three approaches to API retrieval</li>
+          <li>The role of the query representation</li>
+          <li>Research objectives</li>
+          <li>Related work — Web API discovery</li>
+          <li>Related work — embeddings &amp; rerankers</li>
+        </ol>
+      </div>
+      <div>
+        <ol start="8">
+          <li>Methodology overview</li>
+          <li>Dataset and test set construction</li>
+          <li>Baseline models (prior work)</li>
+          <li>Phase 1 architecture and results</li>
+          <li>Phase 2 architecture and results</li>
+          <li>Master comparison and cost analysis</li>
+          <li>Discussion, limitations, future work</li>
+          <li>Conclusion and Q&amp;A</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">2 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 3 — INTRODUCTION: WEB API EXPLOSION -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>1. The Web API Explosion</h1>
+    <div class="subtitle">Why API service discovery is now a genuine productivity problem</div>
+  </div>
+  <div class="slide-body">
+    <div class="col3" style="margin-bottom: 1rem;">
+      <div class="stat-box"><span class="num">40,000+</span><span class="lbl">Endpoints on RapidAPI</span></div>
+      <div class="stat-box"><span class="num">~24,000</span><span class="lbl">APIs on ProgrammableWeb (pre-shutdown)</span></div>
+      <div class="stat-box"><span class="num">6,000+</span><span class="lbl">Parameters in Shopify alone</span></div>
+    </div>
+    <div class="col2">
+      <div class="box">
+        <div class="box-title">Why this matters</div>
+        <ul class="tight">
+          <li>API marketplaces host tens of thousands of services across dozens of categories.</li>
+          <li>Developers spend significant time hunting for the right endpoint, not coding business logic.</li>
+          <li>Service descriptions are brief, ambiguous, often inconsistent across providers.</li>
+        </ul>
+      </div>
+      <div class="box warn">
+        <div class="box-title">Why classical methods break</div>
+        <ul class="tight">
+          <li>Keyword search misses semantic intent (<code>diet plan</code> ≠ <code>meal recommendation</code> lexically).</li>
+          <li>Multiple APIs cover overlapping functions — disambiguation is hard.</li>
+          <li>Modern users expect natural-language queries, not Boolean logic.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">3 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 4 — THE DISCOVERY PROBLEM -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>2. The API Service Discovery Task</h1>
+    <div class="subtitle">A retrieval problem framed formally</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Our pipeline:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini dim">BM25</div>
+        <div class="arch-node-mini dim">BGE</div>
+        <div class="arch-node-mini dim">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini dim">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini dim">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <div class="box accent" style="margin-bottom: 0.6rem;">
+      <p><strong>Input:</strong> User natural-language query — e.g. <code>"User diet plan by day"</code></p>
+      <p><strong>Corpus:</strong> 47,592 API endpoints across 49 categories</p>
+      <p><strong>Output:</strong> Ranked list of top-K most relevant endpoints (with method, parameters, invocation URL)</p>
+      <p><strong>Metrics:</strong> Hit@K (recall) and MRR@K (ranking quality), for K ∈ {5, 10, 20}</p>
+    </div>
+    <div class="col2">
+      <div class="box">
+        <div class="box-title">Why retrieval, not classification?</div>
+        <ul class="tight">
+          <li>Open vocabulary — new APIs added daily.</li>
+          <li>Tens of thousands of "labels" — softmax infeasible.</li>
+          <li>Natural fit for embedding-based and lexical retrieval.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-title">Why is it hard?</div>
+        <ul class="tight">
+          <li>Brief queries, long documents — length asymmetry.</li>
+          <li>Many APIs share similar descriptions across vendors.</li>
+          <li>Hierarchical structure: category → API → endpoint.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">4 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 5 — THREE APPROACHES -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>3. Three Schools of API Retrieval</h1>
+    <div class="subtitle">From rigid keyword matching to LLM-mediated reasoning</div>
+  </div>
+  <div class="slide-body">
+    <div class="col3">
+      <div class="box">
+        <div class="box-title">Era 1 — Lexical (1995–2015)</div>
+        <p><strong>Method:</strong> BM25, TF-IDF over WSDL/UDDI descriptions.</p>
+        <p><strong>Pros:</strong> Cheap, transparent.</p>
+        <p><strong>Cons:</strong> Misses synonyms (<code>email</code> vs <code>e-mail</code>).</p>
+        <p class="small">Robertson &amp; Zaragoza (2009)</p>
+      </div>
+      <div class="box">
+        <div class="box-title">Era 2 — Semantic (2018–2023)</div>
+        <p><strong>Method:</strong> Sentence-BERT, DPR, BGE — encode query &amp; doc into a shared vector space.</p>
+        <p><strong>Pros:</strong> Captures meaning beyond surface form.</p>
+        <p><strong>Cons:</strong> Static query encoding; length asymmetry.</p>
+        <p class="small">Reimers &amp; Gurevych (2019), Karpukhin et al. (2020)</p>
+      </div>
+      <div class="box">
+        <div class="box-title">Era 3 — LLM-mediated (2023–today)</div>
+        <p><strong>Method:</strong> GPT-4 / Llama reasons over candidates with multi-step prompting.</p>
+        <p><strong>Pros:</strong> Powerful semantic understanding.</p>
+        <p><strong>Cons:</strong> Slow, expensive, hard to audit.</p>
+        <p class="small">Li et al. (2025), Achiam et al. (2023)</p>
+      </div>
+    </div>
+    <div class="callout">
+      <strong>Open question this work explores:</strong> Has Era 3 leapfrogged Era 2, or is the Era 2 retrieval stack — combined with modern reranking — already strong enough to match LLM-mediated discovery without the cost?
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">5 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 6 — ROLE OF THE QUERY -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>4. The Quiet Power of the Query Representation</h1>
+    <div class="subtitle">Static vs dynamic query embeddings</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Focus:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini dim">BM25</div>
+        <div class="arch-node-mini dim">BGE</div>
+        <div class="arch-node-mini active">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini dim">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini dim">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini dim">Top-20</div>
+    </div>
+    <div class="col2">
+      <div class="box">
+        <div class="box-title">Static query embeddings</div>
+        <p>Query encoded by a frozen model (e.g. Sentence-BERT) and matched against pre-computed corpus vectors.</p>
+        <ul class="tight">
+          <li class="check">Fast, deterministic, scalable.</li>
+          <li class="cross">Short queries map weakly when documents are long.</li>
+          <li class="cross">No corpus awareness during encoding.</li>
+        </ul>
+      </div>
+      <div class="box accent">
+        <div class="box-title">Dynamic query embeddings</div>
+        <p>Query is rewritten or expanded by a generative model before embedding (HyDE, query expansion, Q2D).</p>
+        <ul class="tight">
+          <li class="check">Bridges query–doc length asymmetry.</li>
+          <li class="check">Exploits LLM world knowledge.</li>
+          <li class="cross">One LLM call per query — non-zero latency &amp; cost.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="box" style="margin-top: 0.8rem;">
+      <div class="box-title">HyDE (Gao et al., ACL 2023): generate first, embed later</div>
+      <div class="pipeline">
+        <div class="pipe-node"><strong>Query</strong><small>"diet plan"</small></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node active"><strong>LLM</strong><small>generate fake API doc</small></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><strong>Embed</strong><small>encode the fake doc</small></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><strong>Retrieve</strong><small>match real docs</small></div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">6 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 7 — RESEARCH OBJECTIVES -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>5. Research Objectives</h1>
+    <div class="subtitle">Four-pronged empirical investigation</div>
+  </div>
+  <div class="slide-body">
+    <div class="col2">
+      <div class="box">
+        <div class="box-title">RO-1 — Reproducibility</div>
+        <p>Faithfully replicate Li et al. (2025)'s evaluation protocol on a public RapidAPI proxy dataset, since the paper's data is not released.</p>
+      </div>
+      <div class="box">
+        <div class="box-title">RO-2 — Retrieval ceiling</div>
+        <p>Measure how far <em>pure retrieval</em> — modern dense embedders + lexical fusion — can reach on Hit@K and MRR@K relative to the paper's GPT-4 hierarchical pipeline.</p>
+      </div>
+      <div class="box">
+        <div class="box-title">RO-3 — Reranking gain</div>
+        <p>Use HyDE for query rewriting and a cross-encoder for fine-grained reranking; measure the additional gain on MRR.</p>
+      </div>
+      <div class="box">
+        <div class="box-title">RO-4 — Cost vs accuracy trade-off</div>
+        <p>Quantify dollar-cost and latency per query for each pipeline stage; identify the smallest configuration matching the paper.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top: 0.7rem;">
+      <strong>Hypothesis:</strong> The bulk of the paper's reported gains comes from the retrieval stage — not from LLM hierarchical reasoning. A strong neural retriever + cross-encoder should already match or exceed their GPT-4 numbers on most metrics.
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">7 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 8 — RELATED WORK 1 -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>6. Related Work — Web API Discovery</h1>
+    <div class="subtitle">From SOAP/UDDI semantic matching to modern LLM-based recommendation</div>
+  </div>
+  <div class="slide-body">
+    <div class="reflist">
+      <div class="refitem"><span class="yr">2002</span><span class="au">Paolucci et al.</span> Semantic matching of Web services with OWL-S — <span class="ven">ISWC</span></div>
+      <div class="refitem"><span class="yr">2007</span><span class="au">Martin et al.</span> Bringing semantics to Web services with OWL-S — <span class="ven">WWW</span></div>
+      <div class="refitem"><span class="yr">2008</span><span class="au">Zhou et al.</span> Web service discovery via keyword clustering and ontology — <span class="ven">IEEE Granular Computing</span></div>
+      <div class="refitem"><span class="yr">2010</span><span class="au">Zhang et al.</span> Wsexpress: a QoS-aware search engine — <span class="ven">IEEE ICWS</span></div>
+      <div class="refitem"><span class="yr">2014</span><span class="au">Taieb et al.</span> Ontology-based semantic similarity — <span class="ven">EAAI</span></div>
+      <div class="refitem"><span class="yr">2016</span><span class="au">He et al.</span> Keyword search for service-based systems — <span class="ven">IEEE TSE</span></div>
+      <div class="refitem"><span class="yr">2018</span><span class="au">Ma et al.</span> TASSIC: Test-Oriented API Search — <span class="ven">IEEE TSC</span></div>
+      <div class="refitem"><span class="yr">2019</span><span class="au">Zhang et al.</span> Information gain + BiLSTM — <span class="ven">CollaborateCom</span></div>
+      <div class="refitem"><span class="yr">2020</span><span class="au">Liu et al.</span> Web API search via two-step transfer learning — <span class="ven">ICWS</span></div>
+      <div class="refitem"><span class="yr">2022</span><span class="au">Wang et al.</span> Automated RESTful API service discovery — <span class="ven">ICSOC</span></div>
+      <div class="refitem"><span class="yr">2024</span><span class="au">Kang et al.</span> Web API recommendation via content + network — <span class="ven">IEEE TNSM</span></div>
+      <div class="refitem"><span class="yr">2025</span><span class="au">Kang et al.</span> Recommendation via contrastive + joint training — <span class="ven">IEEE TNSM</span></div>
+      <div class="refitem"><span class="yr">2025</span><span class="au">Li, Ai, Kang, Qiu, Liu</span> LLM-Based RESTful Web API Service Discovery — <span class="ven">SOCA (target paper)</span></div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">8 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 9 — RELATED WORK 2 -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>7. Related Work — Embeddings, Retrieval, Reranking</h1>
+    <div class="subtitle">The neural retrieval lineage this work builds upon</div>
+  </div>
+  <div class="slide-body">
+    <div class="reflist">
+      <div class="refitem"><span class="yr">2009</span><span class="au">Cormack et al.</span> Reciprocal Rank Fusion (RRF) — <span class="ven">SIGIR</span></div>
+      <div class="refitem"><span class="yr">2009</span><span class="au">Robertson &amp; Zaragoza</span> The probabilistic relevance framework: BM25 — <span class="ven">FnTIR</span></div>
+      <div class="refitem"><span class="yr">2019</span><span class="au">Devlin et al.</span> BERT — <span class="ven">NAACL</span></div>
+      <div class="refitem"><span class="yr">2019</span><span class="au">Reimers &amp; Gurevych</span> Sentence-BERT — <span class="ven">EMNLP</span></div>
+      <div class="refitem"><span class="yr">2019</span><span class="au">Nogueira &amp; Cho</span> Passage Re-ranking with BERT — <span class="ven">arXiv</span></div>
+      <div class="refitem"><span class="yr">2020</span><span class="au">Karpukhin et al.</span> Dense Passage Retrieval (DPR) — <span class="ven">EMNLP</span></div>
+      <div class="refitem"><span class="yr">2021</span><span class="au">Gao et al.</span> SimCSE — <span class="ven">EMNLP</span></div>
+      <div class="refitem"><span class="yr">2023</span><span class="au">Gao et al.</span> HyDE: Precise zero-shot dense retrieval — <span class="ven">ACL</span></div>
+      <div class="refitem"><span class="yr">2023</span><span class="au">Xiao et al.</span> C-Pack (BGE-large-en-v1.5, BGE-reranker-v2-m3) — <span class="ven">arXiv</span></div>
+      <div class="refitem"><span class="yr">2023</span><span class="au">Wang et al.</span> Self-consistency improves CoT reasoning — <span class="ven">ICLR</span></div>
+      <div class="refitem"><span class="yr">2023</span><span class="au">Achiam et al.</span> GPT-4 Technical Report — <span class="ven">arXiv</span></div>
+      <div class="refitem"><span class="yr">2024</span><span class="au">Kotstein &amp; Decker</span> RESTBERTa: extractive QA over API docs — <span class="ven">Cluster Computing</span></div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">9 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 10 — METHODOLOGY OVERVIEW -->
+<!-- ============================================================ -->
+<section class="slide section-slide">
+  <div class="slide-header"></div>
+  <div class="slide-body">
+    <div class="section-num">Part II</div>
+    <h1>Proposed Methodology</h1>
+    <p style="color: #d9e2f3; margin-top: 1rem; font-size: 1.1rem;">Two-phase empirical pipeline · same data, same metrics, isolated interventions</p>
+  </div>
+  <span class="slide-number-corner" style="color: rgba(255,255,255,0.6);">10 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 11 — DATASET -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>8. Dataset — ToolEnv2404 (RapidAPI Proxy)</h1>
+    <div class="subtitle">Public RapidAPI dump from StableToolBench, 2024</div>
+  </div>
+  <div class="slide-body">
+    <div class="col4" style="margin-bottom: 0.8rem;">
+      <div class="stat-box"><span class="num">49</span><span class="lbl">Categories</span></div>
+      <div class="stat-box"><span class="num">~12,304</span><span class="lbl">Tools (APIs)</span></div>
+      <div class="stat-box"><span class="num">47,592</span><span class="lbl">Endpoints</span></div>
+      <div class="stat-box"><span class="num">50</span><span class="lbl">Test Queries</span></div>
+    </div>
+    <div class="col2">
+      <div class="box">
+        <div class="box-title">Test set construction (paper's exact protocol)</div>
+        <ul class="tight">
+          <li>Top 10 categories by endpoint count.</li>
+          <li>5 endpoints per category, stratified across diverse tools.</li>
+          <li>Total = <strong>50 gold endpoints</strong>.</li>
+          <li>Queries synthesised by Llama-3.3-70B (Groq) using the paper's exact rewrite prompt.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-title">Sample query → gold pair</div>
+        <p style="font-family: Consolas, monospace; font-size: 0.82rem; line-height: 1.6;">
+          <strong>Query:</strong> "User diet plan by day"<br/>
+          <strong>Gold:</strong> Health / <code>bespoke_diet_generator</code> /<br/>
+          &nbsp;&nbsp;<code>Get user's diet for a specific day</code><br/>
+          <strong>Method:</strong> GET
+        </p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top: 0.6rem;">
+      <strong>Why proxy is acceptable:</strong> ToolEnv2404 is sourced from the same RapidAPI marketplace, scraped contemporaneously, with the same hierarchical category structure. Numbers are directly comparable in <em>relative</em> terms.
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">11 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 12 — BASELINES FROM PRIOR WORK -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>9. Baseline Models — Prior Empirical Study</h1>
+    <div class="subtitle">7-phase RESTBERTa parameter-matching investigation (PROJECT_COMPLETE_SUMMARY.md)</div>
+  </div>
+  <div class="slide-body">
+    <table>
+      <thead>
+        <tr><th>Phase</th><th>Approach</th><th class="center">PM Acc@1</th><th class="center">ED Acc@1</th><th>Outcome</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>P1</td><td>Paper baseline (CodeBERT-PM)</td><td class="center good">0.8195</td><td class="center">—</td><td>Reproduced</td></tr>
+        <tr><td>P1</td><td>Paper baseline (CodeBERT-ED)</td><td class="center">—</td><td class="center good">0.8844</td><td>Reproduced</td></tr>
+        <tr><td>P2</td><td>ALBERT-base (50K samples)</td><td class="center">0.8064</td><td class="center">0.7545</td><td>Close</td></tr>
+        <tr><td>P2</td><td>DeBERTa-v3-base (50K samples)</td><td class="center">0.5348</td><td class="center">0.7254</td><td>Tokenizer mismatch</td></tr>
+        <tr><td>P3</td><td>RoBERTa-base (50K samples)</td><td class="center">0.7998</td><td class="center">0.7787</td><td>Close</td></tr>
+        <tr><td>P3</td><td>ELECTRA-base (50K samples)</td><td class="center">0.7802</td><td class="center">0.7610</td><td>Close</td></tr>
+        <tr><td>P3</td><td>Qwen-2.5 zero-shot</td><td class="center bad">0.2390</td><td class="center bad">0.2980</td><td>Catastrophic</td></tr>
+        <tr><td>P4</td><td>DeBERTa-large + LoRA</td><td class="center bad">0.2612</td><td class="center">—</td><td>Encoder collapse</td></tr>
+        <tr><td>P6</td><td><strong>RAG (BGE + RoBERTa rerank)</strong></td><td class="center"><strong>0.6437</strong></td><td class="center">0.5582</td><td>Acc@5 = 0.8675</td></tr>
+        <tr><td>P7</td><td>H-RESTBERTa (hierarchical)</td><td class="center bad">0.0526</td><td class="center bad">0.0002</td><td>PAD-bias bug</td></tr>
+      </tbody>
+    </table>
+    <p class="small" style="margin-top: 0.6rem;">
+      These priors directly motivated the present work. Phase 6 RAG had strong Acc@5 (0.87) but weak Acc@1 (0.64), pointing to <em>ranking</em> as the bottleneck. The current Phase 1+2 design directly addresses that gap with a cross-encoder.
+    </p>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">12 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 13 — PHASE 1 ARCHITECTURE -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>10. Phase 1 — Hybrid Sparse + Dense Retrieval</h1>
+    <div class="subtitle">Two parallel retrievers fused with Reciprocal Rank Fusion · no LLM in the loop</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Phase 1:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini active">BM25</div>
+        <div class="arch-node-mini active">BGE</div>
+        <div class="arch-node-mini dim">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini dim">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <div class="box" style="margin-bottom: 0.5rem;">
+      <div class="pipeline">
+        <div class="pipe-node"><strong>Query</strong><small>natural language</small></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-stack">
+          <div class="pipe-node"><strong>BM25</strong><small>top-50 lexical</small></div>
+          <div class="pipe-node"><strong>BGE-large</strong><small>top-50 dense</small></div>
+        </div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node active"><strong>RRF Fusion</strong><small>k = 60</small></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><strong>Top-20</strong><small>final ranking</small></div>
+      </div>
+    </div>
+    <div class="col2">
+      <div class="box">
+        <div class="box-title">BM25 — lexical channel</div>
+        <ul class="tight">
+          <li><code>rank_bm25</code> Okapi, k₁=1.5, b=0.75.</li>
+          <li>Tokenizer: alphanumeric regex, lowercase.</li>
+          <li>Captures function-name keywords (<em>get</em>, <em>list</em>, <em>fetch</em>) precisely.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-title">BGE-large-en-v1.5 — dense channel</div>
+        <ul class="tight">
+          <li>335M-parameter BERT-style encoder.</li>
+          <li>1024-dim normalised embeddings.</li>
+          <li>Query prefix: <code>"Represent this sentence for searching relevant passages: "</code></li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top: 0.5rem; font-style: normal;">
+      <strong>RRF score:</strong> <code>score(d) = Σᵢ 1 / (60 + rankᵢ(d))</code> — fuses independent rankers without score normalization.
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">13 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 14 — PHASE 1 RESULTS -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>11. Phase 1 Results — Already Matches GPT-4 on Hit@20</h1>
+    <div class="subtitle">Pure retrieval, zero LLM reasoning</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Phase 1:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini active">BM25</div>
+        <div class="arch-node-mini active">BGE</div>
+        <div class="arch-node-mini dim">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini dim">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <div class="barchart">
+      <div class="barrow"><span class="lbl">Paper Sentence-BERT</span><div class="bartrack"><div class="barfill muted" style="width: 64%;"></div></div><span class="val">0.640</span></div>
+      <div class="barrow"><span class="lbl">Paper GPT-4 (target)</span><div class="bartrack"><div class="barfill target" style="width: 74%;"></div></div><span class="val">0.740</span></div>
+      <div class="barrow"><span class="lbl">Ours BM25</span><div class="bartrack"><div class="barfill" style="width: 64%;"></div></div><span class="val">0.640</span></div>
+      <div class="barrow"><span class="lbl">Ours BGE-large</span><div class="bartrack"><div class="barfill" style="width: 70%;"></div></div><span class="val">0.700</span></div>
+      <div class="barrow"><span class="lbl">Ours BM25 + BGE RRF</span><div class="bartrack"><div class="barfill good" style="width: 74%;"></div></div><span class="val">0.740</span></div>
+    </div>
+    <p class="table-caption" style="margin-bottom: 0.8rem;">Hit@20 — recall within top 20 candidates</p>
+    <div class="col2">
+      <div class="box success">
+        <div class="box-title">What we won</div>
+        <ul class="tight">
+          <li><strong>Hit@20 = 0.74</strong> equals paper's GPT-4 hierarchical pipeline.</li>
+          <li>Achieved with <strong>0 LLM reasoning calls</strong> (cost ≈ $0/query).</li>
+          <li>BM25 alone matches paper's Sentence-BERT on Hit@20.</li>
+        </ul>
+      </div>
+      <div class="box warn">
+        <div class="box-title">What we still lacked</div>
+        <ul class="tight">
+          <li>MRR@20 = 0.498 vs paper's 0.677 — ranking gap.</li>
+          <li>Correct endpoints in top-20 but at rank 5–15, not 1–3.</li>
+          <li>Motivates Phase 2 — a cross-encoder reranker.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">14 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 15 — PHASE 2 ARCHITECTURE -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>12. Phase 2 — HyDE + Cross-Encoder Reranker</h1>
+    <div class="subtitle">Dynamic query embedding + 568M-param reranker</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Phase 2 (full):</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini active">BM25</div>
+        <div class="arch-node-mini active">BGE</div>
+        <div class="arch-node-mini active">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <div class="box" style="margin-bottom: 0.5rem;">
+      <div class="pipeline">
+        <div class="pipe-node"><strong>Query</strong></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-stack">
+          <div class="pipe-node"><strong>BM25</strong><small>top-50</small></div>
+          <div class="pipe-node"><strong>BGE</strong><small>top-50</small></div>
+          <div class="pipe-node active"><strong>HyDE</strong><small>top-50</small></div>
+        </div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><strong>Triple RRF</strong><small>fused top-50</small></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node active"><strong>Cross-encoder</strong><small>BGE-reranker-v2-m3</small></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><strong>Top-20</strong></div>
+      </div>
+    </div>
+    <div class="col2">
+      <div class="box">
+        <div class="box-title">HyDE — dynamic query rewriting</div>
+        <ul class="tight">
+          <li>Llama-3.3-70B (Groq) generates a 40–80 word hypothetical API doc per query.</li>
+          <li>The fake doc is embedded by BGE-large; that vector is used for retrieval.</li>
+          <li>Bridges query–doc length asymmetry; one Groq call per query.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-title">BGE-reranker-v2-m3 — cross-encoder</div>
+        <ul class="tight">
+          <li>568M-parameter XLM-RoBERTa-large.</li>
+          <li>Takes <code>(query, doc)</code> pair; returns relevance score.</li>
+          <li>Full attention between query &amp; document — far stronger than bi-encoder for fine ranking.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">15 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 16 — PHASE 2 RESULTS HIT -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>13. Phase 2 Results — Beats Paper on Hit@K</h1>
+    <div class="subtitle">Triple-fusion + reranker dominates the paper's GPT-4 across all Hit@K</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Phase 2 full:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini active">BM25</div>
+        <div class="arch-node-mini active">BGE</div>
+        <div class="arch-node-mini active">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Method</th><th class="center">Hit@5</th><th class="center">Hit@10</th><th class="center">Hit@20</th><th class="center">MRR@5</th><th class="center">MRR@10</th><th class="center">MRR@20</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Paper Sentence-BERT</td><td class="center">0.480</td><td class="center">0.560</td><td class="center">0.640</td><td class="center">0.350</td><td class="center">0.361</td><td class="center">0.367</td></tr>
+        <tr><td>Paper GPT-4 hierarchical</td><td class="center">0.600</td><td class="center">0.660</td><td class="center">0.740</td><td class="center">0.507</td><td class="center">0.567</td><td class="center good">0.677</td></tr>
+        <tr><td>P1 — Hybrid (BM25 + BGE)</td><td class="center">0.580</td><td class="center">0.660</td><td class="center">0.740</td><td class="center">0.482</td><td class="center">0.493</td><td class="center">0.498</td></tr>
+        <tr><td>P2 — Triple Fusion (no rerank)</td><td class="center">0.540</td><td class="center">0.620</td><td class="center">0.720</td><td class="center">0.477</td><td class="center">0.486</td><td class="center">0.493</td></tr>
+        <tr><td>P2 — Hybrid + Rerank</td><td class="center good">0.720</td><td class="center good">0.760</td><td class="center good">0.800</td><td class="center good">0.576</td><td class="center good">0.580</td><td class="center">0.583</td></tr>
+        <tr><td><strong>P2 — Triple + Rerank (FULL)</strong></td><td class="center good">0.720</td><td class="center good">0.780</td><td class="center good">0.800</td><td class="center good">0.574</td><td class="center good">0.581</td><td class="center">0.582</td></tr>
+      </tbody>
+    </table>
+    <p class="table-caption">Best entry per column highlighted in green</p>
+    <div class="col3" style="margin-top: 0.8rem;">
+      <div class="stat-box" style="background: var(--highlight-green);"><span class="num good" style="color: var(--good)">+12 pts</span><span class="lbl">Hit@5 gain over paper</span></div>
+      <div class="stat-box" style="background: var(--highlight-green);"><span class="num good" style="color: var(--good)">+12 pts</span><span class="lbl">Hit@10 gain over paper</span></div>
+      <div class="stat-box" style="background: var(--highlight-green);"><span class="num good" style="color: var(--good)">+6 pts</span><span class="lbl">Hit@20 gain over paper</span></div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">16 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 17 — PHASE 2 DELTA -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>14. Phase 2 Detailed Delta — 5 of 6 Metrics Beat Paper</h1>
+    <div class="subtitle">Honest accounting: where we win, where we trail</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Phase 2 full:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini active">BM25</div>
+        <div class="arch-node-mini active">BGE</div>
+        <div class="arch-node-mini active">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <div class="barchart">
+      <div class="barrow"><span class="lbl">Hit@5: +0.120</span><div class="bartrack"><div class="barfill good" style="width: 92%;"></div></div><span class="val" style="color: var(--good)">+12.0%</span></div>
+      <div class="barrow"><span class="lbl">Hit@10: +0.120</span><div class="bartrack"><div class="barfill good" style="width: 92%;"></div></div><span class="val" style="color: var(--good)">+12.0%</span></div>
+      <div class="barrow"><span class="lbl">Hit@20: +0.060</span><div class="bartrack"><div class="barfill good" style="width: 60%;"></div></div><span class="val" style="color: var(--good)">+6.0%</span></div>
+      <div class="barrow"><span class="lbl">MRR@5: +0.067</span><div class="bartrack"><div class="barfill good" style="width: 65%;"></div></div><span class="val" style="color: var(--good)">+6.7%</span></div>
+      <div class="barrow"><span class="lbl">MRR@10: +0.013</span><div class="bartrack"><div class="barfill good" style="width: 25%;"></div></div><span class="val" style="color: var(--good)">+1.3%</span></div>
+      <div class="barrow"><span class="lbl">MRR@20: −0.095</span><div class="bartrack"><div class="barfill bad" style="width: 70%;"></div></div><span class="val" style="color: var(--bad)">−9.5%</span></div>
+    </div>
+    <div class="box" style="margin-top: 0.8rem;">
+      <div class="box-title">Why MRR@20 trails despite Hit@20 leading</div>
+      <p>When our retriever <em>finds</em> the gold endpoint, the cross-encoder ranks it at position 1–2 — better than the paper's average rank. But on the <strong>10 of 50 queries that retrieval misses</strong>, the gold is absent from the top-20 entirely; meanwhile the paper's hierarchical LLM occasionally salvages such cases at ranks 6–20.</p>
+      <p style="margin-top: 0.4rem; color: var(--accent);"><strong>→</strong> This is the single missing ingredient that a follow-up Phase 3 (LLM hierarchical fallback over top-100) is designed to recover.</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">17 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 18 — MASTER COMPARISON -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>15. Master Comparison — Accuracy &amp; Cost</h1>
+    <div class="subtitle">Spanning prior baselines, the paper's pipeline, and our two phases</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Phase 2 full:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini active">BM25</div>
+        <div class="arch-node-mini active">BGE</div>
+        <div class="arch-node-mini active">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>System</th><th class="center">Hit@20</th><th class="center">MRR@20</th><th class="center">LLM calls / query</th><th class="center">$ / 1K queries</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Paper TextOnly (cosine)</td><td class="center">0.640</td><td class="center">0.364</td><td class="center">0</td><td class="center">~$0</td></tr>
+        <tr><td>Paper Sentence-BERT</td><td class="center">0.640</td><td class="center">0.367</td><td class="center">0</td><td class="center">~$0</td></tr>
+        <tr><td>Paper LLM Direct (GPT-4)</td><td class="center">0.700</td><td class="center">0.586</td><td class="center">1</td><td class="center">~$10</td></tr>
+        <tr><td>Paper Llama-2 hierarchical</td><td class="center">0.640</td><td class="center">0.572</td><td class="center">3+</td><td class="center">~$2</td></tr>
+        <tr><td><strong>Paper GPT-4 hierarchical (target)</strong></td><td class="center">0.740</td><td class="center good">0.677</td><td class="center">3–4</td><td class="center">~$30–50</td></tr>
+        <tr><td>Phase 1 — Hybrid retrieval</td><td class="center">0.740</td><td class="center">0.498</td><td class="center"><strong>0</strong></td><td class="center"><strong>~$0</strong></td></tr>
+        <tr><td><strong>Phase 2 — Triple + Rerank</strong></td><td class="center good">0.800</td><td class="center">0.582</td><td class="center">1 (HyDE only)</td><td class="center">~$0.5</td></tr>
+      </tbody>
+    </table>
+    <div class="col2" style="margin-top: 0.8rem;">
+      <div class="box success">
+        <div class="box-title">Phase 1 takeaway</div>
+        <p>Pure retrieval matches paper's expensive GPT-4 hierarchical Hit@20 with literally <strong>zero</strong> LLM calls — at ~5,000× lower cost.</p>
+      </div>
+      <div class="box success">
+        <div class="box-title">Phase 2 takeaway</div>
+        <p>Cross-encoder reranking + HyDE pushes Hit@20 to <strong>0.80</strong> — comfortably above the paper — at ~60–100× lower cost than GPT-4.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">18 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 19 — DISCUSSION -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>16. Discussion — Why Modern Retrieval Wins</h1>
+    <div class="subtitle">Three structural factors</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Why each piece matters:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini active">BM25</div>
+        <div class="arch-node-mini active">BGE</div>
+        <div class="arch-node-mini active">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <div class="col3">
+      <div class="box">
+        <div class="box-title">Reason 1 — Embedder vintage matters</div>
+        <p>The paper's Sentence-BERT (2019) is two generations behind BGE-large (2023). Modern contrastive pretraining over web-scale pairs captures semantic nuance that an LLM hierarchical pipeline can only approximate post-hoc.</p>
+      </div>
+      <div class="box">
+        <div class="box-title">Reason 2 — Sparse + dense complementary</div>
+        <p>BM25 catches API-name keywords precisely; dense embeddings catch semantic synonymy. RRF fuses both without score calibration. The paper compared neither.</p>
+      </div>
+      <div class="box">
+        <div class="box-title">Reason 3 — Cross-encoders for ranking</div>
+        <p>BGE-reranker-v2-m3 sees full query–doc cross-attention. The paper's LLM was being asked to do this work — at orders-of-magnitude higher cost.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top: 0.7rem;">
+      <strong>Implicit critique of the paper:</strong> the gains attributed to "hierarchical reasoning" are partially an artefact of comparing against an obsolete embedding baseline. With a 2023-vintage retrieval stack, much of the LLM-hierarchical machinery becomes redundant for Hit@K.
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">19 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 20 — LIMITATIONS -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>17. Limitations &amp; Honest Caveats</h1>
+    <div class="subtitle">Five places where reviewers will (rightly) push back</div>
+  </div>
+  <div class="slide-body">
+    <div class="col2">
+      <div class="box warn">
+        <div class="box-title">Tiny test set (N = 50)</div>
+        <p>Each correct query shifts Hit@K by 2%. Confidence intervals are wide. Future work expands to 200–500 queries with multi-seed runs.</p>
+      </div>
+      <div class="box warn">
+        <div class="box-title">Queries are LLM-synthesised</div>
+        <p>Paraphrases of gold descriptions — possible distributional leak. Real developer queries (StackOverflow, GitHub issues) are needed to validate.</p>
+      </div>
+      <div class="box warn">
+        <div class="box-title">Dataset is a proxy</div>
+        <p>ToolEnv2404 ≠ paper's exact RapidAPI snapshot. Numbers comparable in <em>relative</em> terms; absolute parity requires the paper's authors to release their data.</p>
+      </div>
+      <div class="box warn">
+        <div class="box-title">MRR@20 still trails</div>
+        <p>Phase 3 (LLM hierarchical fallback for retrieval-missed queries) was designed but blocked by Groq daily quota during the project window. Architecture &amp; code are complete.</p>
+      </div>
+    </div>
+    <div class="box warn" style="margin-top: 0.5rem;">
+      <div class="box-title">Single-platform study</div>
+      <p>Only RapidAPI's hierarchical structure is tested. ProgrammableWeb-style flat directories may behave differently — explicitly noted by the paper as future work and inherited as a limitation here.</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">20 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 21 — FUTURE WORK + CONCLUSION -->
+<!-- ============================================================ -->
+<section class="slide">
+  <div class="slide-header">
+    <h1>18. Conclusion &amp; Future Work</h1>
+    <div class="subtitle">Where this work goes next</div>
+  </div>
+  <div class="slide-body">
+    <div class="arch-strip">
+      <span class="arch-label">Final pipeline:</span>
+      <div class="arch-node-mini active">Query</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-group">
+        <div class="arch-node-mini active">BM25</div>
+        <div class="arch-node-mini active">BGE</div>
+        <div class="arch-node-mini active">HyDE</div>
+      </div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">RRF</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Cross-Enc</div>
+      <span class="arch-arrow-mini">→</span>
+      <div class="arch-node-mini active">Top-20</div>
+    </div>
+    <div class="box accent" style="margin-bottom: 0.5rem;">
+      <p style="font-size: 1rem; line-height: 1.55;">
+        For RESTful API service discovery, a 2023-vintage retrieval stack — <strong>BM25 + BGE-large + RRF fusion + a cross-encoder reranker</strong> — already <strong>beats the paper's GPT-4-based hierarchical pipeline on five out of six standard metrics</strong>, at roughly <strong>50× lower per-query cost</strong>. The remaining MRR@20 gap is structurally explainable: it traces to ten queries that retrieval misses entirely.
+      </p>
+    </div>
+    <div class="col2">
+      <div class="box">
+        <div class="box-title">Phase 3 — LLM hierarchical fallback</div>
+        <p>Apply paper's 3-level recipe over top-100 candidates with two improvements:</p>
+        <ul class="tight">
+          <li><strong>Pre-filtered candidates</strong> instead of full corpus → 5–10× lower token cost.</li>
+          <li><strong>Learned self-checking</strong>: cross-encoder probability replaces the paper's heuristic +20/−10.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-title">Phase 4 + benchmarks</div>
+        <ul class="tight">
+          <li><strong>Self-consistency (N=3)</strong> — aggregate LLM samples, +1–3 MRR points.</li>
+          <li><strong>Realistic query benchmark</strong> — scrape StackOverflow / GitHub for 200–500 real developer queries.</li>
+          <li><strong>Multilingual queries</strong> — paper's explicit future work.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col3" style="margin-top: 0.7rem;">
+      <div class="stat-box" style="background: var(--highlight-green);"><span class="num">5 / 6</span><span class="lbl">Metrics beat paper's GPT-4</span></div>
+      <div class="stat-box" style="background: var(--highlight-green);"><span class="num">~50×</span><span class="lbl">Lower per-query cost</span></div>
+      <div class="stat-box" style="background: var(--highlight-green);"><span class="num">0</span><span class="lbl">Hierarchical LLM calls in Phase 1</span></div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="institution">IIIT Raichur</span>
+    <span>Aman Kumar (CS23B1003) &middot; Rudra Pratap Singh (AD23B1047) &middot; Supervisor: Dr. Neha Agarwal</span>
+    <span>April 2026</span>
+  </div>
+  <span class="slide-number-corner">21 / 22</span>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 22 — THANK YOU -->
+<!-- ============================================================ -->
+<section class="slide section-slide">
+  <div class="slide-header"></div>
+  <div class="slide-body">
+    <div class="section-num">End of presentation</div>
+    <h1 style="font-size: 4rem;">Thank You</h1>
+    <p style="color: #d9e2f3; margin-top: 1rem; font-size: 1.2rem;">Questions, critiques, and pointers to overlooked literature are very welcome.</p>
+    <div style="margin-top: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 800px;">
+      <div style="text-align: center;">
+        <div style="font-size: 0.8rem; color: #b4c5e7; margin-bottom: 0.3rem;">AUTHOR 1</div>
+        <div style="font-weight: 700; color: white; font-size: 1.1rem;">Aman Kumar</div>
+        <div style="color: #b4c5e7; font-size: 0.9rem; margin-top: 0.2rem;">CS23B1003</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 0.8rem; color: #b4c5e7; margin-bottom: 0.3rem;">AUTHOR 2</div>
+        <div style="font-weight: 700; color: white; font-size: 1.1rem;">Rudra Pratap Singh</div>
+        <div style="color: #b4c5e7; font-size: 0.9rem; margin-top: 0.2rem;">AD23B1047</div>
+      </div>
+    </div>
+    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 800px;">
+      <div style="text-align: center;">
+        <div style="font-size: 0.8rem; color: #b4c5e7; margin-bottom: 0.3rem;">SUPERVISOR</div>
+        <div style="font-weight: 700; color: white;">Dr. Neha Agarwal</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 0.8rem; color: #b4c5e7; margin-bottom: 0.3rem;">INSTITUTION</div>
+        <div style="font-weight: 700; color: white;">IIIT Raichur</div>
+      </div>
+    </div>
+  </div>
+  <span class="slide-number-corner" style="color: rgba(255,255,255,0.6);">22 / 22</span>
+</section>
+
+</div>
+
+<!-- NAV -->
+<div class="nav-bar">
+  <button class="nav-btn" id="first" title="Home">⏮ First</button>
+  <button class="nav-btn" id="prev" title="Previous (←)">◀ Prev</button>
+  <span class="nav-counter"><span id="cur">1</span> of <span id="tot">22</span></span>
+  <button class="nav-btn" id="next" title="Next (→)">Next ▶</button>
+  <button class="nav-btn" id="last" title="End">Last ⏭</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let cur = 0;
+
+  const elProgress = document.getElementById('progress');
+  const elCur = document.getElementById('cur');
+  const elTot = document.getElementById('tot');
+  const btnFirst = document.getElementById('first');
+  const btnPrev = document.getElementById('prev');
+  const btnNext = document.getElementById('next');
+  const btnLast = document.getElementById('last');
+
+  elTot.textContent = total;
+
+  function render() {
+    slides.forEach((s, i) => {
+      s.classList.toggle('active', i === cur);
+    });
+    elCur.textContent = cur + 1;
+    elProgress.style.width = ((cur + 1) / total * 100) + '%';
+    btnPrev.disabled = cur === 0;
+    btnFirst.disabled = cur === 0;
+    btnNext.disabled = cur === total - 1;
+    btnLast.disabled = cur === total - 1;
+
+    // Animate bar fills inside the active slide
+    const active = slides[cur];
+    active.querySelectorAll('.barfill').forEach(b => {
+      const w = b.style.width;
+      b.style.width = '0%';
+      requestAnimationFrame(() => {
+        setTimeout(() => { b.style.width = w; }, 80);
+      });
+    });
+  }
+
+  function go(i) {
+    cur = Math.max(0, Math.min(total - 1, i));
+    render();
+  }
+
+  btnFirst.addEventListener('click', () => go(0));
+  btnPrev.addEventListener('click', () => go(cur - 1));
+  btnNext.addEventListener('click', () => go(cur + 1));
+  btnLast.addEventListener('click', () => go(total - 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(cur + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(cur - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); go(0); }
+    else if (e.key === 'End') { e.preventDefault(); go(total - 1); }
+  });
+
+  // Click anywhere on slide (not buttons) to advance
+  document.querySelectorAll('.slide').forEach(s => {
+    s.addEventListener('click', (e) => {
+      if (e.target.closest('a, button, input')) return;
+      // Ignore clicks on text selections
+      if (window.getSelection().toString()) return;
+      go(cur + 1);
+    });
+  });
+
+  render();
+</script>
+</body>
+</html>
